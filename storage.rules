@@ -1,0 +1,49 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    // Documents can be uploaded by admin and read by document owner
+    match /documents/{studentUid}/{documentType}/{fileName} {
+      // Admin can upload documents
+      allow write: if request.auth != null && 
+                   'admin' in request.auth.token && 
+                   request.auth.token.admin == true;
+                   
+      // Student can read their own documents
+      allow read: if request.auth != null && 
+                  request.auth.uid == studentUid;
+                  
+      // Admin can read all documents
+      allow read: if request.auth != null && 
+                  'admin' in request.auth.token && 
+                  request.auth.token.admin == true;
+    }
+    
+    // Resume uploads for applications
+    match /resumes/{uid}/{fileName} {
+      // Users can upload their own resumes
+      allow write: if request.auth != null && 
+                   request.auth.uid == uid &&
+                   resource.size < 5 * 1024 * 1024; // 5MB limit
+                   
+      // Users can read their own resumes
+      allow read: if request.auth != null && 
+                  request.auth.uid == uid;
+                  
+      // Admin can read all resumes
+      allow read: if request.auth != null && 
+                  'admin' in request.auth.token && 
+                  request.auth.token.admin == true;
+    }
+    
+    // Profile images
+    match /profile-images/{uid}/{fileName} {
+      // Users can upload their own profile images
+      allow write: if request.auth != null && 
+                   request.auth.uid == uid &&
+                   resource.size < 2 * 1024 * 1024; // 2MB limit
+                   
+      // Anyone can read profile images (public)
+      allow read: if true;
+    }
+  }
+}

@@ -1,0 +1,80 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helper function to check if user is admin
+    function isAdmin() {
+      return request.auth != null && 
+             ('admin' in resource.data && resource.data.admin == true) ||
+             ('admin' in request.auth.token && request.auth.token.admin == true);
+    }
+    
+    // Helper function to check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Helper function to check if user owns the document
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+    
+    // Applications collection
+    match /applications/{uid} {
+      // Users can create and read their own applications
+      allow create: if isAuthenticated() && isOwner(uid);
+      allow read: if isOwner(uid);
+      
+      // Admins can read and update any application
+      allow read, write: if isAdmin();
+    }
+    
+    // Students collection
+    match /students/{uid} {
+      // Users can read and update their own student profile
+      allow read: if isOwner(uid);
+      allow update: if isOwner(uid) && 
+                    // Prevent users from updating sensitive fields
+                    !('status' in request.resource.data) &&
+                    !('paymentStatus' in request.resource.data) &&
+                    !('progressSteps' in request.resource.data) &&
+                    !('progressPercentage' in request.resource.data);
+      
+      // Admins can do everything
+      allow read, write: if isAdmin();
+    }
+    
+    // Payments collection
+    match /payments/{paymentId} {
+      // Users can read their own payments
+      allow read: if isAuthenticated() && 
+                  resource.data.uid == request.auth.uid;
+      
+      // System can create payments (for payment processing)
+      allow create: if isAuthenticated();
+      
+      // System can update payment status (for verification)
+      allow update: if isAuthenticated() && 
+                    resource.data.uid == request.auth.uid;
+      
+      // Admins can read all payments
+      allow read, write: if isAdmin();
+    }
+    
+    // Documents collection
+    match /documents/{documentId} {
+      // Users can read their own documents if enabled
+      allow read: if isAuthenticated() && 
+                  resource.data.uid == request.auth.uid &&
+                  resource.data.isEnabled == true;
+      
+      // Admins can do everything
+      allow read, write: if isAdmin();
+    }
+    
+    // Admin-specific collections (if any)
+    match /admin/{document=**} {
+      allow read, write: if isAdmin();
+    }
+  }
+}
