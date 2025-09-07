@@ -7,7 +7,7 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // Configure email transporter (configure with your email service)
-const transporter = nodemailer.createTransporter({
+const transporter = nodemailer.createTransport({
   service: 'gmail', // or your email service
   auth: {
     user: functions.config().email?.user || process.env.EMAIL_USER,
