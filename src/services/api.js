@@ -1,13 +1,19 @@
 // API service for backend communication
 import { auth } from '../config/firebase';
+import { toast } from 'react-toastify';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
 
 class ApiService {
   async getAuthToken() {
     const user = auth.currentUser;
-    if (!user) throw new Error('User not authenticated');
-    return await user.getIdToken();
+    if (!user) {
+      // Try to get token from localStorage as fallback
+      const token = localStorage.getItem('accessToken');
+      if (!token) throw new Error('User not authenticated');
+      return token;
+    }
+    return await user.getIdToken(true); // Force refresh token
   }
 
   async request(endpoint, options = {}) {
@@ -28,14 +34,33 @@ class ApiService {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'API request failed');
+        throw new Error(data.error || `HTTP ${response.status}: ${response.statusText}`);
       }
 
       return data;
     } catch (error) {
       console.error('API Error:', error);
+      if (error.message.includes('admin access required')) {
+        toast.error('Admin access required. Please login as admin.');
+      } else if (error.message.includes('Authentication required')) {
+        toast.error('Please login to continue.');
+      } else {
+        toast.error(error.message);
+      }
       throw error;
     }
+  }
+
+  // Auth APIs
+  async loginWithEmail(email, password) {
+    return this.request('/api/auth/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async getCurrentUser() {
+    return this.request('/api/auth/me');
   }
 
   // Application APIs
@@ -200,6 +225,16 @@ class ApiService {
 
   async getUserClaims(uid) {
     return this.request(`/api/admin/user-claims/${uid}`);
+  }
+
+  // File Upload to Firebase Storage
+  async uploadToFirebase(file, path) {
+    const { storage } = await import('../config/firebase');
+    const { ref, uploadBytes, getDownloadURL } = await import('firebase/storage');
+    
+    const storageRef = ref(storage, path);
+    const snapshot = await uploadBytes(storageRef, file);
+    return await getDownloadURL(snapshot.ref);
   }
 }
 
