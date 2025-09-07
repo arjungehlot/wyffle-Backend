@@ -1,9 +1,6 @@
 import * as admin from 'firebase-admin';
 import { getFirestore } from 'firebase-admin/firestore';
 import { getStorage } from 'firebase-admin/storage';
-import * as dotenv from "dotenv";
-
-dotenv.config();
 
 // Initialize Firebase Admin SDK
 const serviceAccount = {
