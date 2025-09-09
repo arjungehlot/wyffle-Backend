@@ -29,10 +29,13 @@ export class StudentService {
 
   async updateStudent(uid: string, updateData: Partial<StudentData>): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).update({
-        ...updateData,
-        updatedAt: new Date()
-      });
+      await this.studentsCollection.doc(uid).set(
+        {
+          ...updateData,
+          updatedAt: new Date(),
+        },
+        { merge: true } // ✅ safe update (create if missing)
+      );
       console.log(`Student updated: ${uid}`);
     } catch (error) {
       console.error('Error updating student:', error);
@@ -42,10 +45,13 @@ export class StudentService {
 
   async updateStudentStatus(uid: string, status: StudentData['status']): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).update({
-        status,
-        updatedAt: new Date()
-      });
+      await this.studentsCollection.doc(uid).set(
+        {
+          status,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
       console.log(`Student status updated for user: ${uid} to ${status}`);
     } catch (error) {
       console.error('Error updating student status:', error);
@@ -57,7 +63,7 @@ export class StudentService {
     try {
       const updateData: any = {
         paymentStatus,
-        updatedAt: new Date()
+        updatedAt: new Date(),
       };
 
       // Update progress steps if payment is successful
@@ -68,7 +74,7 @@ export class StudentService {
         updateData.status = 'active';
       }
 
-      await this.studentsCollection.doc(uid).update(updateData);
+      await this.studentsCollection.doc(uid).set(updateData, { merge: true });
       console.log(`Payment status updated for user: ${uid} to ${paymentStatus}`);
     } catch (error) {
       console.error('Error updating payment status:', error);
@@ -78,10 +84,13 @@ export class StudentService {
 
   async updateProgress(uid: string, progressPercentage: number): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).update({
-        progressPercentage,
-        updatedAt: new Date()
-      });
+      await this.studentsCollection.doc(uid).set(
+        {
+          progressPercentage,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
       console.log(`Progress updated for user: ${uid} to ${progressPercentage}%`);
     } catch (error) {
       console.error('Error updating progress:', error);
@@ -89,12 +98,19 @@ export class StudentService {
     }
   }
 
-  async updateProgressStep(uid: string, step: keyof StudentData['progressSteps'], completed: boolean): Promise<void> {
+  async updateProgressStep(
+    uid: string,
+    step: keyof StudentData['progressSteps'],
+    completed: boolean
+  ): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).update({
-        [`progressSteps.${step}`]: completed,
-        updatedAt: new Date()
-      });
+      await this.studentsCollection.doc(uid).set(
+        {
+          [`progressSteps.${step}`]: completed,
+          updatedAt: new Date(),
+        },
+        { merge: true }
+      );
       console.log(`Progress step updated for user: ${uid}, step: ${step}, completed: ${completed}`);
     } catch (error) {
       console.error('Error updating progress step:', error);

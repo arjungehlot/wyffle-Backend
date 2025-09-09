@@ -1,9 +1,11 @@
-import { db, storage } from "../config/firebase";
+import { db, bucket } from "../config/firebase"; // ✅ bucket is now exported
 import { DocumentData } from "../types";
 import { File } from "@google-cloud/storage";
 import { Bucket } from "@google-cloud/storage";
-
-import { CollectionReference, DocumentData as FirestoreDocData } from "firebase-admin/firestore";
+import {
+  CollectionReference,
+  DocumentData as FirestoreDocData,
+} from "firebase-admin/firestore";
 
 export class DocumentService {
   private documentsCollection: CollectionReference<FirestoreDocData>;
@@ -11,7 +13,7 @@ export class DocumentService {
 
   constructor() {
     this.documentsCollection = db.collection("documents");
-    this.bucket = storage.bucket();
+    this.bucket = bucket; // ✅ always use the configured bucket
   }
 
   async uploadDocument(
@@ -34,7 +36,7 @@ export class DocumentService {
 
       const [fileUrl] = await fileRef.getSignedUrl({
         action: "read",
-        expires: "03-09-2491", // Far future date
+        expires: "03-09-2491", // far future date
       });
 
       const documentData: DocumentData = {
@@ -54,7 +56,9 @@ export class DocumentService {
       const docRef = this.documentsCollection.doc();
       await docRef.set(documentData);
 
-      console.log(`✅ Document uploaded for student: ${studentUid}, type: ${documentType}`);
+      console.log(
+        `✅ Document uploaded for student: ${studentUid}, type: ${documentType}`
+      );
       return fileUrl;
     } catch (error) {
       console.error("❌ Error uploading document:", error);
@@ -86,7 +90,9 @@ export class DocumentService {
         isEnabled: enabled,
         updatedAt: new Date(),
       });
-      console.log(`✅ Document ${documentId} ${enabled ? "enabled" : "disabled"}`);
+      console.log(
+        `✅ Document ${documentId} ${enabled ? "enabled" : "disabled"}`
+      );
     } catch (error) {
       console.error("❌ Error updating document status:", error);
       throw new Error("Failed to update document status");

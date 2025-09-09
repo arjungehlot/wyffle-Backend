@@ -1,4 +1,7 @@
+// types.ts
+
 export interface ApplicationData {
+  id?: string; // optional Firestore document ID
   uid: string;
   fullName: string;
   email: string;
@@ -11,7 +14,7 @@ export interface ApplicationData {
   skills: string[];
   interestedFields: string[];
   resumeFileUrl?: string;
-  resumeLink?: string;
+  resumeLink: string;
   motivation: string;
   availability: string;
   source: string;
@@ -38,8 +41,8 @@ export interface StudentData {
   motivation: string;
   availability: string;
   source: string;
-  
-  // Student specific fields
+
+  // Student-specific fields
   coverImage?: string;
   profileImage?: string;
   institute?: string;
@@ -53,11 +56,11 @@ export interface StudentData {
   projectsBuilt: number;
   progressPercentage: number;
   internshipStatus: 'active' | 'inactive' | 'completed';
-  
+
   // Status tracking
   status: 'shortlisted' | 'active' | 'completed' | 'rejected';
   paymentStatus: 'paid' | 'pending' | 'failed' | 'not_selected';
-  
+
   // Progress steps
   progressSteps: {
     applicationSubmitted: boolean;
@@ -68,7 +71,7 @@ export interface StudentData {
     finalShowcase: boolean;
     certificateReady: boolean;
   };
-  
+
   createdAt: Date;
   updatedAt: Date;
 }
@@ -108,14 +111,14 @@ export interface RazorpayOrder {
   id: string;
   entity: string;
   amount: number;
-  amount_paid: number;
-  amount_due: number;
+  amount_paid?: number;
+  amount_due?: number;
   currency: string;
   receipt: string;
-  offer_id: string | null;
+  offer_id?: string | null;
   status: string;
   attempts: number;
-  notes: any;
+  notes?: Record<string, any>;
   created_at: number;
 }
 

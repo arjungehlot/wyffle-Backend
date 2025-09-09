@@ -6,11 +6,11 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Import routes
-import applicationsRouter from './routes/applications';
-import studentsRouter from './routes/students';
-import paymentsRouter from './routes/payments';
-import documentsRouter from './routes/documents';
-import adminRouter from './routes/admin';
+import applicationsRouter from './routes/applications.routes';
+import studentsRouter from './routes/students.routes';
+import paymentsRouter from './routes/payments.routes';
+import documentsRouter from './routes/documents.routes';
+import adminRouter from './routes/admin.routes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;

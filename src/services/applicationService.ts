@@ -1,6 +1,13 @@
 import { db } from '../config/firebase';
 import { ApplicationData, StudentData } from '../types';
 
+function cleanData(obj: any) {
+  return Object.fromEntries(
+    Object.entries(obj).filter(([_, v]) => v !== undefined)
+  );
+}
+
+
 export class ApplicationService {
   private applicationsCollection = db.collection('applications');
   private studentsCollection = db.collection('students');
@@ -37,13 +44,39 @@ export class ApplicationService {
     }
   }
 
+  async getApplicationById(id: string): Promise<ApplicationData | null> {
+    try {
+      const doc = await this.applicationsCollection.doc(id).get();
+      if (!doc.exists) {
+        return null;
+      }
+      return { id: doc.id, ...doc.data() } as ApplicationData;
+    } catch (error) {
+      console.error('Error fetching application by ID:', error);
+      throw new Error('Failed to fetch application by ID');
+    }
+  }
+
   async getAllApplications(): Promise<ApplicationData[]> {
     try {
       const snapshot = await this.applicationsCollection.orderBy('createdAt', 'desc').get();
-      return snapshot.docs.map(doc => doc.data() as ApplicationData);
+      return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ApplicationData));
     } catch (error) {
       console.error('Error fetching applications:', error);
       throw new Error('Failed to fetch applications');
+    }
+  }
+
+  async updateApplication(id: string, updateData: Partial<ApplicationData>): Promise<void> {
+    try {
+      await this.applicationsCollection.doc(id).update({
+        ...updateData,
+        updatedAt: new Date()
+      });
+      console.log(`Application updated for ID: ${id}`);
+    } catch (error) {
+      console.error('Error updating application:', error);
+      throw new Error('Failed to update application');
     }
   }
 
@@ -67,58 +100,61 @@ export class ApplicationService {
   }
 
   private async shortlistStudent(uid: string): Promise<void> {
-    try {
-      const application = await this.getApplication(uid);
-      if (!application) {
-        throw new Error('Application not found');
-      }
-
-      const studentData: StudentData = {
-        uid,
-        applicationId: uid,
-        fullName: application.fullName,
-        email: application.email,
-        phoneNo: application.phoneNo,
-        dateOfBirth: application.dateOfBirth,
-        location: application.location,
-        college: application.college,
-        degree: application.degree,
-        yearOfGraduation: application.yearOfGraduation,
-        skills: application.skills,
-        interestedFields: application.interestedFields,
-        resumeFileUrl: application.resumeFileUrl,
-        resumeLink: application.resumeLink,
-        motivation: application.motivation,
-        availability: application.availability,
-        source: application.source,
-        
-        // Initialize student specific fields
-        activeDays: 0,
-        projectsBuilt: 0,
-        progressPercentage: 0,
-        internshipStatus: 'inactive',
-        status: 'shortlisted',
-        paymentStatus: 'pending',
-        
-        progressSteps: {
-          applicationSubmitted: true,
-          resumeShortlisted: true,
-          interviewCompleted: false,
-          paymentProcess: false,
-          internshipActive: false,
-          finalShowcase: false,
-          certificateReady: false
-        },
-        
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-
-      await this.studentsCollection.doc(uid).set(studentData);
-      console.log(`Student record created for user: ${uid}`);
-    } catch (error) {
-      console.error('Error creating student record:', error);
-      throw error;
+  try {
+    const application = await this.getApplication(uid);
+    if (!application) {
+      throw new Error('Application not found');
     }
+
+    const studentData: StudentData = {
+      uid,
+      applicationId: uid,
+      fullName: application.fullName,
+      email: application.email,
+      phoneNo: application.phoneNo,
+      dateOfBirth: application.dateOfBirth,
+      location: application.location,
+      college: application.college,
+      degree: application.degree,
+      yearOfGraduation: application.yearOfGraduation,
+      skills: application.skills,
+      interestedFields: application.interestedFields,
+      resumeFileUrl: application.resumeFileUrl || undefined, // 👈 safe
+      resumeLink: application.resumeLink || undefined,      // 👈 safe
+      motivation: application.motivation,
+      availability: application.availability,
+      source: application.source,
+
+      // Student-specific fields
+      activeDays: 0,
+      projectsBuilt: 0,
+      progressPercentage: 0,
+      internshipStatus: 'inactive',
+      status: 'shortlisted',
+      paymentStatus: 'pending',
+
+      progressSteps: {
+        applicationSubmitted: true,
+        resumeShortlisted: true,
+        interviewCompleted: false,
+        paymentProcess: false,
+        internshipActive: false,
+        finalShowcase: false,
+        certificateReady: false
+      },
+
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+
+    // Save clean data
+    await this.studentsCollection.doc(uid).set(cleanData(studentData));
+
+    console.log(`Student record created for user: ${uid}`);
+  } catch (error) {
+    console.error('Error creating student record:', error);
+    throw new Error('Failed to create student record');
   }
+}
+
 }
