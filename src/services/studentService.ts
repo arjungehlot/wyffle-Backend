@@ -34,7 +34,7 @@ export class StudentService {
           ...updateData,
           updatedAt: new Date(),
         },
-        { merge: true } // ✅ safe update (create if missing)
+        { merge: true } 
       );
       console.log(`Student updated: ${uid}`);
     } catch (error) {
