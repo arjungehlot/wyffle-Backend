@@ -1,7 +1,7 @@
 import express from 'express';
 // import admin from 'firebase-admin'; // Import Admin SDK
 import { verifyToken, requireAdmin, AuthenticatedRequest } from '../middleware/auth';
-import admin from '../config/firebase-admin'; // Your admin setup file
+import admin from '../config/firebase'; // Your admin setup file
 const router = express.Router();
 
 // --------------------
