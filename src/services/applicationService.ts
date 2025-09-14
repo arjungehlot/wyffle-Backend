@@ -3,18 +3,22 @@ import { ApplicationData, StudentData } from '../types';
 
 function cleanData(obj: any) {
   return Object.fromEntries(
-    Object.entries(obj).filter(([_, v]) => v !== undefined)
+    Object.entries(obj).filter(([_, v]) => v !== undefined && v !== null)
   );
 }
-
 
 export class ApplicationService {
   private applicationsCollection = db.collection('applications');
   private studentsCollection = db.collection('students');
 
-  async createApplication(uid: string, applicationData: Omit<ApplicationData, 'uid' | 'createdAt' | 'updatedAt'>): Promise<string> {
+  async createApplication(
+    uid: string,
+    applicationData: Omit<ApplicationData, 'id' | 'uid' | 'createdAt' | 'updatedAt' | 'status'>
+  ): Promise<string> {
     try {
+      const docRef = this.applicationsCollection.doc(); // 🔹 auto-ID instead of uid
       const application: ApplicationData = {
+        id: docRef.id,
         uid,
         ...applicationData,
         status: 'pending',
@@ -22,38 +26,34 @@ export class ApplicationService {
         updatedAt: new Date()
       };
 
-      await this.applicationsCollection.doc(uid).set(application);
-      console.log(`Application created for user: ${uid}`);
-      return uid;
+      await docRef.set(application);
+      console.log(`Application created for user: ${uid}, docId: ${docRef.id}`);
+      return docRef.id;
     } catch (error) {
       console.error('Error creating application:', error);
       throw new Error('Failed to create application');
     }
   }
 
-  async getApplication(uid: string): Promise<ApplicationData | null> {
-    try {
-      const doc = await this.applicationsCollection.doc(uid).get();
-      if (!doc.exists) {
-        return null;
-      }
-      return doc.data() as ApplicationData;
-    } catch (error) {
-      console.error('Error fetching application:', error);
-      throw new Error('Failed to fetch application');
-    }
-  }
-
   async getApplicationById(id: string): Promise<ApplicationData | null> {
     try {
       const doc = await this.applicationsCollection.doc(id).get();
-      if (!doc.exists) {
-        return null;
-      }
+      if (!doc.exists) return null;
       return { id: doc.id, ...doc.data() } as ApplicationData;
     } catch (error) {
       console.error('Error fetching application by ID:', error);
       throw new Error('Failed to fetch application by ID');
+    }
+  }
+
+  async getApplication(uid: string): Promise<ApplicationData | null> {
+    try {
+      const snapshot = await this.applicationsCollection.where('uid', '==', uid).limit(1).get();
+      if (snapshot.empty) return null;
+      return snapshot.docs[0].data() as ApplicationData;
+    } catch (error) {
+      console.error('Error fetching application:', error);
+      throw new Error('Failed to fetch application');
     }
   }
 
@@ -80,81 +80,76 @@ export class ApplicationService {
     }
   }
 
-  async updateApplicationStatus(uid: string, status: ApplicationData['status']): Promise<void> {
+  async updateApplicationStatus(id: string, status: ApplicationData['status']): Promise<void> {
     try {
-      await this.applicationsCollection.doc(uid).update({
+      await this.applicationsCollection.doc(id).update({
         status,
         updatedAt: new Date()
       });
 
-      // If shortlisted, create student record
       if (status === 'shortlisted') {
-        await this.shortlistStudent(uid);
+        await this.shortlistStudent(id);
       }
 
-      console.log(`Application status updated for user: ${uid} to ${status}`);
+      console.log(`Application status updated for ID: ${id} to ${status}`);
     } catch (error) {
       console.error('Error updating application status:', error);
       throw new Error('Failed to update application status');
     }
   }
 
-  private async shortlistStudent(uid: string): Promise<void> {
-  try {
-    const application = await this.getApplication(uid);
-    if (!application) {
-      throw new Error('Application not found');
+  private async shortlistStudent(applicationId: string): Promise<void> {
+    try {
+      const application = await this.getApplicationById(applicationId);
+      if (!application) throw new Error('Application not found');
+
+      const studentData: StudentData = {
+        uid: application.uid,
+        applicationId,
+        fullName: application.fullName || '',
+        email: application.email || '',
+        phoneNo: application.phoneNo || '',
+        dateOfBirth: application.dateOfBirth || '',
+        location: application.location || '',
+        college: application.college || '',
+        degree: application.degree || '',
+        yearOfGraduation: typeof application.yearOfGraduation === 'number' 
+          ? application.yearOfGraduation 
+          : Number(application.yearOfGraduation) || 0,
+        skills: application.skills || [],
+        interestedFields: application.interestedFields || [],
+        resumeFileUrl: application.resumeFileUrl || undefined,
+        resumeLink: application.resumeLink || undefined,
+        motivation: application.motivation || '',
+        availability: application.availability || '',
+        source: application.source || '',
+
+        activeDays: 0,
+        projectsBuilt: 0,
+        progressPercentage: 0,
+        internshipStatus: 'inactive',
+        status: 'shortlisted',
+        paymentStatus: 'pending',
+
+        progressSteps: {
+          applicationSubmitted: true,
+          resumeShortlisted: true,
+          interviewCompleted: false,
+          paymentProcess: false,
+          internshipActive: false,
+          finalShowcase: false,
+          certificateReady: false
+        },
+
+        createdAt: new Date(),
+        updatedAt: new Date()
+      };
+
+      await this.studentsCollection.doc(application.uid).set(cleanData(studentData));
+      console.log(`Student record created for user: ${application.uid}`);
+    } catch (error) {
+      console.error('Error creating student record:', error);
+      throw new Error('Failed to create student record');
     }
-
-    const studentData: StudentData = {
-      uid,
-      applicationId: uid,
-      fullName: application.fullName,
-      email: application.email,
-      phoneNo: application.phoneNo,
-      dateOfBirth: application.dateOfBirth,
-      location: application.location,
-      college: application.college,
-      degree: application.degree,
-      yearOfGraduation: application.yearOfGraduation,
-      skills: application.skills,
-      interestedFields: application.interestedFields,
-      resumeFileUrl: application.resumeFileUrl || undefined, // 👈 safe
-      resumeLink: application.resumeLink || undefined,      // 👈 safe
-      motivation: application.motivation,
-      availability: application.availability,
-      source: application.source,
-
-      // Student-specific fields
-      activeDays: 0,
-      projectsBuilt: 0,
-      progressPercentage: 0,
-      internshipStatus: 'inactive',
-      status: 'shortlisted',
-      paymentStatus: 'pending',
-
-      progressSteps: {
-        applicationSubmitted: true,
-        resumeShortlisted: true,
-        interviewCompleted: false,
-        paymentProcess: false,
-        internshipActive: false,
-        finalShowcase: false,
-        certificateReady: false
-      },
-
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-
-    // Save clean data
-    await this.studentsCollection.doc(uid).set(cleanData(studentData));
-
-    console.log(`Student record created for user: ${uid}`);
-  } catch (error) {
-    console.error('Error creating student record:', error);
-    throw new Error('Failed to create student record');
   }
-}
-
 }

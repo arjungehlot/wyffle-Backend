@@ -12,7 +12,7 @@ router.post('/', verifyToken, requireAuth, async (req: AuthenticatedRequest, res
     const applicationData = req.body;
 
     const applicationId = await applicationService.createApplication(uid, applicationData);
-    
+
     res.status(201).json({
       success: true,
       message: 'Application submitted successfully',
@@ -26,6 +26,7 @@ router.post('/', verifyToken, requireAuth, async (req: AuthenticatedRequest, res
     });
   }
 });
+
 
 // Get user's application
 router.get('/my-application', verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
