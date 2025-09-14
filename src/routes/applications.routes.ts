@@ -1,6 +1,6 @@
 import express from 'express';
 import { ApplicationService } from '../services/applicationService';
-import { verifyToken, requireAuth, AuthenticatedRequest } from '../middleware/auth';
+import { verifyToken, requireAuth, requireAdmin, AuthenticatedRequest } from '../middleware/auth';
 
 const router = express.Router();
 const applicationService = new ApplicationService();
@@ -53,8 +53,8 @@ router.get('/my-application', verifyToken, requireAuth, async (req: Authenticate
   }
 });
 
-// Get all applications (now available to all authenticated users)
-router.get('/', verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
+// Get all applications (admin only)
+router.get('/', verifyToken, requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const applications = await applicationService.getAllApplications();
     
@@ -71,25 +71,16 @@ router.get('/', verifyToken, requireAuth, async (req: AuthenticatedRequest, res)
   }
 });
 
-// Update application status (now with ownership check)
-router.put('/:uid/status', verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
+// Update application status (admin only)
+router.put('/:uid/status', verifyToken, requireAdmin, async (req: AuthenticatedRequest, res) => {
   try {
     const { uid } = req.params;
     const { status } = req.body;
-    const currentUserUid = req.user!.uid;
 
     if (!['pending', 'shortlisted', 'rejected'].includes(status)) {
       return res.status(400).json({
         success: false,
         error: 'Invalid status'
-      });
-    }
-
-    // Check if user is updating their own application
-    if (uid !== currentUserUid) {
-      return res.status(403).json({
-        success: false,
-        error: 'You can only update your own application status'
       });
     }
 
@@ -122,12 +113,12 @@ router.get('/:id', verifyToken, requireAuth, async (req: AuthenticatedRequest, r
     }
 
     // Optional: Add ownership check if users should only see their own applications
-    // if (application.uid !== req.user!.uid) {
-    //   return res.status(403).json({
-    //     success: false,
-    //     error: 'Access denied'
-    //   });
-    // }
+    if (application.uid !== req.user!.uid && !req.user!.isAdmin) {
+      return res.status(403).json({
+        success: false,
+        error: 'Access denied'
+      });
+    }
 
     res.json({
       success: true,

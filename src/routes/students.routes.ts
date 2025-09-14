@@ -10,7 +10,7 @@ import {
 const router = express.Router();
 const studentService = new StudentService();
 
-// ✅ Get all students (admin only)
+// Get all students (admin only)
 router.get("/", verifyToken, requireAdmin, async (req, res) => {
   try {
     const students = await studentService.getAllStudents();
@@ -21,7 +21,7 @@ router.get("/", verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ Get current user's student profile
+// Get current user's student profile
 router.get("/profile", verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const uid = req.user?.uid;
@@ -41,7 +41,7 @@ router.get("/profile", verifyToken, requireAuth, async (req: AuthenticatedReques
   }
 });
 
-// ✅ Update current user's profile
+// Update current user's profile
 router.put("/profile", verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const uid = req.user?.uid;
@@ -65,14 +65,18 @@ router.put("/profile", verifyToken, requireAuth, async (req: AuthenticatedReques
   }
 });
 
-// ✅ Get specific student (admin only)
-router.get("/:uid", verifyToken, requireAdmin, async (req, res) => {
+// Get specific student (admin or owner)
+router.get("/:uid", verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { uid } = req.params;
     const student = await studentService.getStudent(uid);
 
     if (!student) {
       return res.status(404).json({ success: false, error: "Student not found" });
+    }
+
+    if (req.user?.uid !== uid && !req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: "Access denied" });
     }
 
     res.json({ success: true, data: student });
@@ -82,7 +86,7 @@ router.get("/:uid", verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ Update student (admin only)
+// Update student (admin only)
 router.put("/:uid", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;
@@ -96,7 +100,7 @@ router.put("/:uid", verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ Update student status (admin only)
+// Update student status (admin only)
 router.put("/:uid/status", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;
@@ -115,7 +119,7 @@ router.put("/:uid/status", verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ Update payment status (admin only)
+// Update payment status (admin only)
 router.put("/:uid/payment-status", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;
@@ -134,7 +138,7 @@ router.put("/:uid/payment-status", verifyToken, requireAdmin, async (req, res) =
   }
 });
 
-// ✅ Update progress (admin only)
+// Update progress (admin only)
 router.put("/:uid/progress", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;
@@ -152,7 +156,7 @@ router.put("/:uid/progress", verifyToken, requireAdmin, async (req, res) => {
   }
 });
 
-// ✅ Update progress step (admin only)
+// Update progress step (admin only)
 router.put("/:uid/progress-step", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { uid } = req.params;

@@ -40,17 +40,21 @@ const upload = multer({
 // Accept a single file field named 'file'
 const uploadSingle = upload.single("file");
 
-// 📌 Upload document (Admin only)
+// Upload document (Admin or owner)
 router.post(
   "/upload/:studentUid",
   verifyToken,
-  requireAdmin,
+  requireAuth,
   uploadSingle,
   async (req: AuthenticatedRequest, res) => {
     try {
       const { studentUid } = req.params;
       const uploadedBy = req.user!.uid;
       const { documentType } = req.body as { documentType: DocumentType };
+
+      if (req.user?.uid !== studentUid && !req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: "Access denied" });
+    }
 
       // Validate document type
       if (!documentType || !allowedTypes.includes(documentType)) {
@@ -78,7 +82,7 @@ router.post(
   }
 );
 
-// 📌 Get current user's documents
+// Get current user's documents
 router.get("/my-documents", verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const uid = req.user!.uid;
@@ -90,10 +94,15 @@ router.get("/my-documents", verifyToken, requireAuth, async (req: AuthenticatedR
   }
 });
 
-// 📌 Get documents for a student (Admin only)
-router.get("/student/:studentUid", verifyToken, requireAdmin, async (req, res) => {
+// Get documents for a student (Admin or owner)
+router.get("/student/:studentUid", verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
   try {
     const { studentUid } = req.params;
+
+    if (req.user?.uid !== studentUid && !req.user?.isAdmin) {
+        return res.status(403).json({ success: false, error: "Access denied" });
+    }
+
     const documents = await documentService.getStudentDocuments(studentUid);
     res.json({ success: true, data: documents });
   } catch (error) {
@@ -102,7 +111,7 @@ router.get("/student/:studentUid", verifyToken, requireAdmin, async (req, res) =
   }
 });
 
-// 📌 Enable/disable document (Admin only)
+// Enable/disable document (Admin only)
 router.put("/:documentId/status", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { documentId } = req.params;
@@ -118,7 +127,7 @@ router.put("/:documentId/status", verifyToken, requireAdmin, async (req, res) =>
   }
 });
 
-// 📌 Delete document (Admin only)
+// Delete document (Admin only)
 router.delete("/:documentId", verifyToken, requireAdmin, async (req, res) => {
   try {
     const { documentId } = req.params;
