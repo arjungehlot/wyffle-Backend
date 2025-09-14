@@ -17,7 +17,7 @@ const requiredEnvVars = [
   "FIREBASE_PROJECT_ID",
   "FIREBASE_PRIVATE_KEY",
   "FIREBASE_CLIENT_EMAIL",
-  "FIREBASE_STORAGE_BUCKET", // ✅ Added storage bucket
+  "FIREBASE_STORAGE_BUCKET",
 ];
 
 const missingVars = requiredEnvVars.filter((v) => !process.env[v]);
@@ -36,13 +36,13 @@ if (missingVars.length > 0) {
 if (!admin.apps.length) {
   admin.initializeApp({
     credential: admin.credential.cert(serviceAccount),
-    storageBucket: process.env.FIREBASE_STORAGE_BUCKET, // ✅ fixed
+    storageBucket: process.env.FIREBASE_STORAGE_BUCKET,
   });
 }
 
 // --- Exports ---
 export const db = getFirestore();
 export const storage = getStorage();
-export const bucket = admin.storage().bucket(); // ✅ direct bucket instance
+export const bucket = admin.storage().bucket();
 export const auth = admin.auth();
 export default admin;
