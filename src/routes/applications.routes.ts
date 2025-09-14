@@ -86,7 +86,7 @@ router.put('/:uid/status', verifyToken, requireAdmin, async (req: AuthenticatedR
     }
 
     await applicationService.updateApplicationStatus(uid, status);
-    
+
     res.json({
       success: true,
       message: 'Application status updated successfully'
@@ -99,6 +99,7 @@ router.put('/:uid/status', verifyToken, requireAdmin, async (req: AuthenticatedR
     });
   }
 });
+
 
 // New route: Get application by ID (authenticated users)
 router.get('/:id', verifyToken, requireAuth, async (req: AuthenticatedRequest, res) => {
