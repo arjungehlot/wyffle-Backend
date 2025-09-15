@@ -35,16 +35,23 @@ export class ApplicationService {
     }
   }
 
-  async getApplicationById(id: string): Promise<ApplicationData | null> {
-    try {
-      const doc = await this.applicationsCollection.doc(id).get();
-      if (!doc.exists) return null;
-      return { id: doc.id, ...doc.data() } as ApplicationData;
-    } catch (error) {
-      console.error('Error fetching application by ID:', error);
-      throw new Error('Failed to fetch application by ID');
+
+ async getApplicationById(id: string): Promise<ApplicationData | null> {
+  try {
+    if (!id || typeof id !== "string") {
+      throw new Error("Invalid document ID");
     }
+
+    const doc = await this.applicationsCollection.doc(id).get();
+    if (!doc.exists) return null;
+
+    return { id: doc.id, ...doc.data() } as ApplicationData;
+  } catch (error) {
+    console.error("Error fetching application by ID:", error);
+    throw new Error("Failed to fetch application by ID");
   }
+}
+
 
   async getApplication(uid: string): Promise<ApplicationData | null> {
     try {
@@ -104,7 +111,7 @@ export class ApplicationService {
       if (!application) throw new Error('Application not found');
 
       const studentData: StudentData = {
-        uid: application.uid,
+        uid: application.uid ?? '',
         applicationId,
         fullName: application.fullName || '',
         email: application.email || '',
@@ -145,6 +152,9 @@ export class ApplicationService {
         updatedAt: new Date()
       };
 
+      if (!application.uid) {
+        throw new Error('Application UID is missing');
+      }
       await this.studentsCollection.doc(application.uid).set(cleanData(studentData));
       console.log(`Student record created for user: ${application.uid}`);
     } catch (error) {

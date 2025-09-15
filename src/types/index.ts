@@ -2,7 +2,8 @@
 
 export interface ApplicationData {
   id?: string; // optional Firestore document ID
-  uid: string;
+  uid?: string;
+  userId: string;
   fullName: string;
   email: string;
   phoneNo: string;
@@ -34,7 +35,7 @@ export interface StudentData {
   college: string;
   degree: string;
   yearOfGraduation: number;
-  skills: string[];
+  skills: string[] | string | null | undefined;
   interestedFields: string[];
   resumeFileUrl?: string;
   resumeLink?: string;
