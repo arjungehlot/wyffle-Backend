@@ -18,22 +18,25 @@ const PORT = process.env.PORT || 3000;
 // --- CORS Configuration ---
 const allowedOrigins = [
   process.env.FRONTEND_URL || "https://wyffle-three.vercel.app",
-  "http://localhost:5173",
+  "http://localhost:5173", // local dev
 ];
 
 const corsOptions: cors.CorsOptions = {
   origin: (origin, callback) => {
-    // Allow requests with no origin (like mobile apps or curl)
+    console.log("🌍 Incoming request from origin:", origin); // log every origin
+
+    // Allow requests with no origin (like curl or mobile apps)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
+      console.warn("❌ Blocked by CORS:", origin);
       callback(new Error("Not allowed by CORS"));
     }
   },
   methods: ["GET", "HEAD", "PUT", "PATCH", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  allowedHeaders: ["Content-Type", "Authorization", "Accept", "X-Requested-With"],
   credentials: true,
-  optionsSuccessStatus: 200, // ✅ important for legacy browsers
+  optionsSuccessStatus: 200, // ✅ for legacy browsers
 };
 
 // Middleware
@@ -66,7 +69,7 @@ app.use(
     res: express.Response,
     next: express.NextFunction
   ) => {
-    console.error("❌ Error:", err.message, err.stack);
+    console.error("❌ Error:", err.message);
     res.status(err.status || 500).json({
       success: false,
       message: err.message || "Internal Server Error",
