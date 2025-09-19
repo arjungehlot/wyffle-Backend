@@ -93,7 +93,6 @@ export class ApplicationService {
         status,
         updatedAt: new Date()
       });
-
       if (status === 'shortlisted') {
         await this.shortlistStudent(id);
       }
@@ -105,61 +104,67 @@ export class ApplicationService {
     }
   }
 
-  private async shortlistStudent(applicationId: string): Promise<void> {
-    try {
-      const application = await this.getApplicationById(applicationId);
-      if (!application) throw new Error('Application not found');
+private async shortlistStudent(applicationId: string): Promise<void> {
+  try {
+    const application = await this.getApplicationById(applicationId);
+    if (!application) throw new Error("Application not found");
 
-      const studentData: StudentData = {
-        uid: application.uid ?? '',
-        applicationId,
-        fullName: application.fullName || '',
-        email: application.email || '',
-        phoneNo: application.phoneNo || '',
-        dateOfBirth: application.dateOfBirth || '',
-        location: application.location || '',
-        college: application.college || '',
-        degree: application.degree || '',
-        yearOfGraduation: typeof application.yearOfGraduation === 'number' 
-          ? application.yearOfGraduation 
+    console.log("Fetched application:", application);
+
+    const studentData: StudentData = {
+      uid: application.userId ?? application.uid ?? "",
+      applicationId,
+      fullName: application.fullName || "",
+      email: application.email || "",
+      phoneNo: application.phoneNo || "",
+      dateOfBirth: application.dateOfBirth || "",
+      location: application.location || "",
+      college: application.college || "",
+      degree: application.degree || "",
+      yearOfGraduation:
+        typeof application.yearOfGraduation === "number"
+          ? application.yearOfGraduation
           : Number(application.yearOfGraduation) || 0,
-        skills: application.skills || [],
-        interestedFields: application.interestedFields || [],
-        resumeFileUrl: application.resumeFileUrl || undefined,
-        resumeLink: application.resumeLink || undefined,
-        motivation: application.motivation || '',
-        availability: application.availability || '',
-        source: application.source || '',
+      skills: application.skills || [],
+      interestedFields: application.interestedFields || [],
+      resumeFileUrl: application.resumeFileUrl || undefined,
+      resumeLink: application.resumeLink || undefined,
+      motivation: application.motivation || "",
+      availability: application.availability || "",
+      source: application.source || "",
 
-        activeDays: 0,
-        projectsBuilt: 0,
-        progressPercentage: 0,
-        internshipStatus: 'inactive',
-        status: 'shortlisted',
-        paymentStatus: 'pending',
+      activeDays: 0,
+      projectsBuilt: 0,
+      progressPercentage: 0,
+      internshipStatus: "inactive",
+      status: "shortlisted",
+      paymentStatus: "pending",
 
-        progressSteps: {
-          applicationSubmitted: true,
-          resumeShortlisted: true,
-          interviewCompleted: false,
-          paymentProcess: false,
-          internshipActive: false,
-          finalShowcase: false,
-          certificateReady: false
-        },
+      progressSteps: {
+        applicationSubmitted: true,
+        resumeShortlisted: true,
+        interviewCompleted: false,
+        paymentProcess: false,
+        internshipActive: false,
+        finalShowcase: false,
+        certificateReady: false,
+      },
 
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    };
 
-      if (!application.uid) {
-        throw new Error('Application UID is missing');
-      }
-      await this.studentsCollection.doc(application.uid).set(cleanData(studentData));
-      console.log(`Student record created for user: ${application.uid}`);
-    } catch (error) {
-      console.error('Error creating student record:', error);
-      throw new Error('Failed to create student record');
+    console.log("Prepared studentData:", studentData);
+
+    if (!application.userId && !application.uid) {
+      throw new Error("Application UID is missing");
     }
+
+    const docRef = await db.collection("students").add(cleanData(studentData));
+    console.log(`✅ Student record created with ID: ${docRef.id}`);
+  } catch (error: any) {
+    console.error("❌ Error creating student record:", error.message, error.stack);
+    throw new Error("Failed to create student record");
   }
+}
 }

@@ -27,9 +27,9 @@ export const verifyToken = async (req: AuthenticatedRequest, res: Response, next
     const tokenString = JSON.stringify(decodedToken);
     const tokenObj = JSON.parse(tokenString);
     
-    console.log('=== NUCLEAR DEBUG ===');
-    console.log('Token string:', tokenString);
-    console.log('Parsed token object:', tokenObj);
+    // console.log('=== NUCLEAR DEBUG ===');
+    // console.log('Token string:', tokenString);
+    // console.log('Parsed token object:', tokenObj);
     
     // Check every possible way the admin claim could exist
     let isAdmin = false;
@@ -37,25 +37,25 @@ export const verifyToken = async (req: AuthenticatedRequest, res: Response, next
     // 1. Check direct property
     if (tokenObj.admin === true) {
       isAdmin = true;
-      console.log('Admin found: direct property');
+      // console.log('Admin found: direct property');
     }
     // 2. Check UID match
     else if (decodedToken.uid === ADMIN_UID) {
       isAdmin = true;
-      console.log('Admin found: UID match');
+      // console.log('Admin found: UID match');
     }
     // 3. Check for claims object
     else if (tokenObj.claims && tokenObj.claims.admin === true) {
       isAdmin = true;
-      console.log('Admin found: claims object');
+      // console.log('Admin found: claims object');
     }
     // 4. Check for customClaims object
     else if (tokenObj.customClaims && tokenObj.customClaims.admin === true) {
       isAdmin = true;
-      console.log('Admin found: customClaims object');
+      // console.log('Admin found: customClaims object');
     }
 
-    console.log('Final isAdmin:', isAdmin);
+    // console.log('Final isAdmin:', isAdmin);
 
     req.user = {
       uid: decodedToken.uid,
@@ -79,11 +79,11 @@ export const requireAuth = (req: AuthenticatedRequest, res: Response, next: Next
 
 // Middleware to require admin
 export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: NextFunction) => {
-  console.log('=== ADMIN CHECK DEBUG ===');
-  console.log('Checking admin access for user:', req.user?.email);
-  console.log('User UID:', req.user?.uid);
-  console.log('Is Admin:', req.user?.isAdmin);
-  console.log('=========================');
+  // console.log('=== ADMIN CHECK DEBUG ===');
+  // console.log('Checking admin access for user:', req.user?.email);
+  // console.log('User UID:', req.user?.uid);
+  // console.log('Is Admin:', req.user?.isAdmin);
+  // console.log('=========================');
   
   if (!req.user?.isAdmin) {
     console.log('❌ ADMIN ACCESS DENIED');
@@ -93,6 +93,6 @@ export const requireAdmin = (req: AuthenticatedRequest, res: Response, next: Nex
     });
   }
   
-  console.log('✅ ADMIN ACCESS GRANTED');
+  // console.log('✅ ADMIN ACCESS GRANTED');
   next();
 };

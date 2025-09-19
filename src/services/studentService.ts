@@ -2,11 +2,10 @@ import { db } from '../config/firebase';
 import { StudentData } from '../types';
 
 export class StudentService {
-  private studentsCollection = db.collection('students');
 
   async getStudent(uid: string): Promise<StudentData | null> {
     try {
-      const doc = await this.studentsCollection.doc(uid).get();
+      const doc = await db.collection('students').doc(uid).get();
       if (!doc.exists) {
         return null;
       }
@@ -19,7 +18,7 @@ export class StudentService {
 
   async getAllStudents(): Promise<StudentData[]> {
     try {
-      const snapshot = await this.studentsCollection.orderBy('createdAt', 'desc').get();
+      const snapshot = await db.collection('students').orderBy('createdAt', 'desc').get();
       return snapshot.docs.map(doc => doc.data() as StudentData);
     } catch (error) {
       console.error('Error fetching students:', error);
@@ -29,12 +28,11 @@ export class StudentService {
 
   async updateStudent(uid: string, updateData: Partial<StudentData>): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).set(
+      await db.collection('students').doc(uid).set(
         {
           ...updateData,
-          updatedAt: new Date(),
         },
-        { merge: true } 
+        { merge: true }
       );
       console.log(`Student updated: ${uid}`);
     } catch (error) {
@@ -45,7 +43,7 @@ export class StudentService {
 
   async updateStudentStatus(uid: string, status: StudentData['status']): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).set(
+      await db.collection('students').doc(uid).set(
         {
           status,
           updatedAt: new Date(),
@@ -74,7 +72,7 @@ export class StudentService {
         updateData.status = 'active';
       }
 
-      await this.studentsCollection.doc(uid).set(updateData, { merge: true });
+      await db.collection('students').doc(uid).set(updateData, { merge: true });
       console.log(`Payment status updated for user: ${uid} to ${paymentStatus}`);
     } catch (error) {
       console.error('Error updating payment status:', error);
@@ -84,7 +82,7 @@ export class StudentService {
 
   async updateProgress(uid: string, progressPercentage: number): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).set(
+      await db.collection('students').doc(uid).set(
         {
           progressPercentage,
           updatedAt: new Date(),
@@ -104,7 +102,7 @@ export class StudentService {
     completed: boolean
   ): Promise<void> {
     try {
-      await this.studentsCollection.doc(uid).set(
+      await db.collection('students').doc(uid).set(
         {
           [`progressSteps.${step}`]: completed,
           updatedAt: new Date(),
