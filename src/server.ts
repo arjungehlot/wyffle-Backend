@@ -17,7 +17,7 @@ const PORT = process.env.PORT || 3000;
 
 // --- CORS Configuration ---
 const allowedOrigins = [
-  process.env.FRONTEND_URL || "https://wyffle.vercel.app",
+  process.env.FRONTEND_URL || "https://wyffle-three.vercel.app",
   "http://localhost:5173",
 ];
 
